@@ -65,9 +65,11 @@ impl<CTX: Printer + GetReciver<CTX = CTX, COMP = Self> + 'static> Component<CTX>
                     callback.emit(());
                 }*/
                 self.class = if self.class == "square_red" {"square_green"} else {"square_red"};
+                
+                let send_back = context.send_back(|msg| msg);
                 let reciver = context.get_reciver();
                 reciver.send(Msg::Clear);
-                reciver.set(context.sender.clone());
+                reciver.set(send_back);
             },
             Msg::Clear => {
                 self.class = "square_red"

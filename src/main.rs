@@ -15,7 +15,7 @@ struct Context {
 use std::cell::Cell;
 use yew::html::{ScopeSender, ComponentUpdate};
 pub struct Reciver<CTX, COMP: Component<CTX>> {
-    inner: Cell<Option<ScopeSender<CTX, COMP>>>
+    inner: Cell<Option<Callback<COMP::Msg>>>
 }
 
 pub trait GetReciver{
@@ -38,12 +38,12 @@ impl<CTX, COMP: Component<CTX>> Reciver<CTX, COMP> {
             inner: Cell::new(None)
         }
     }
-    fn set(&self, sender: ScopeSender<CTX, COMP>) {
+    fn set(&self, sender: Callback<COMP::Msg>) {
         self.inner.set(Some(sender));
     }
     fn send(&self, update: COMP::Msg ) {
         if let Some(mut sender) = self.inner.take() {
-            sender.send(ComponentUpdate::Message(update));
+            sender.emit(update);
         }
     }
 }
