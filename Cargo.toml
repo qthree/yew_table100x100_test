@@ -1,0 +1,7 @@
+[package]
+name = "table100x100"
+version = "0.1.0"
+authors = ["qthree <qthree3@gmail.com>"]
+
+[dependencies]
+yew = {git = "https://github.com/DenisKolodin/yew"}
