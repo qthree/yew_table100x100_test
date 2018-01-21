@@ -2,7 +2,73 @@
 extern crate yew;
 use yew::prelude::*;
 
-type Context = ();
+mod square;
+use square::Square;
+
+use yew::services::console::ConsoleService;
+
+struct Context {
+    console: ConsoleService,
+    active_square: Reciver<Context, Square>,
+}
+
+use std::cell::Cell;
+use yew::html::{ScopeSender, ComponentUpdate};
+pub struct Reciver<CTX, COMP: Component<CTX>> {
+    inner: Cell<Option<ScopeSender<CTX, COMP>>>
+}
+
+pub trait GetReciver{
+    type CTX;
+    type COMP: Component<Self::CTX>;
+    fn get_reciver(&self) -> &Reciver<Self::CTX, Self::COMP>;
+}
+
+impl GetReciver for Context {
+    type CTX = Context;
+    type COMP = Square;
+    fn get_reciver(&self) -> &Reciver<Self::CTX, Self::COMP> {
+        &self.active_square
+    }
+}
+
+impl<CTX, COMP: Component<CTX>> Reciver<CTX, COMP> {
+    fn new() -> Self{
+        Reciver{
+            inner: Cell::new(None)
+        }
+    }
+    fn set(&self, sender: ScopeSender<CTX, COMP>) {
+        self.inner.set(Some(sender));
+    }
+    fn send(&self, update: COMP::Msg ) {
+        if let Some(mut sender) = self.inner.take() {
+            sender.send(ComponentUpdate::Message(update));
+        }
+    }
+}
+/*
+trait SenderLike<CTX> {
+    type COMP: Component<Self::CTX>;
+    fn send(&mut self);
+}
+
+
+impl<CTX, COMP: Component<CTX>> SenderLike for ScopeSender<CTX, COMP> {
+    fn send(&mut self) {
+        self.send()
+    }
+}*/
+
+pub trait Printer {
+    fn print(&mut self, data: &str);
+}
+
+impl Printer for Context {
+    fn print(&mut self, data: &str) {
+        self.console.log(data);
+    }
+}
 
 struct Model {
     selected: Option<(u32, u32)>
@@ -41,12 +107,18 @@ fn square_class(this: (u32, u32), selected: Option<(u32, u32)>) -> &'static str 
 }
 
 fn view_square(selected: Option<(u32, u32)>, row: u32, column: u32) -> Html<Context, Model> {
-    html! {
+    /*html! {
         <td
             class=square_class((column, row), selected),
             onclick=move |_| Msg::Select(column, row),
         >
         </td>
+    }*/
+    html! {
+        <Square:
+            onsignal=move |_| Msg::Select(column, row),
+            class=square_class((column, row), selected),
+        />
     }
 }
 
@@ -74,7 +146,11 @@ impl Renderable<Context, Model> for Model {
 
 fn main() {
     yew::initialize();
-    let app: App<_, Model> = App::new(());
+    let context = Context {
+        console: ConsoleService,
+        active_square: Reciver::new()
+    };
+    let app: App<_, Model> = App::new(context);
     app.mount_to_body();
     yew::run_loop();
 }
