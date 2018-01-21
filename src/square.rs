@@ -17,7 +17,6 @@ pub struct Square {
 
 pub enum Msg {
     Clicked,
-    Clear
 }
 
 #[derive(PartialEq, Clone)]
@@ -34,8 +33,8 @@ impl Default for Props {
         }
     }
 }
-use GetReciver;
-impl<CTX: Printer + GetReciver<CTX = CTX, COMP = Self> + 'static> Component<CTX> for Square{
+
+impl<CTX: Printer + 'static> Component<CTX> for Square{
     type Msg = Msg;
     type Properties = Props;
 
@@ -61,16 +60,9 @@ impl<CTX: Printer + GetReciver<CTX = CTX, COMP = Self> + 'static> Component<CTX>
         
         match msg {
             Msg::Clicked => {
-                /*if let Some(ref mut callback) = self.onsignal {
+                if let Some(ref mut callback) = self.onsignal {
                     callback.emit(());
-                }*/
-                self.class = if self.class == "square_red" {"square_green"} else {"square_red"};
-                let reciver = context.get_reciver();
-                reciver.send(Msg::Clear);
-                reciver.set(context.sender.clone());
-            },
-            Msg::Clear => {
-                self.class = "square_red"
+                }
             }
         }
         true
@@ -93,7 +85,7 @@ impl<CTX: Printer + GetReciver<CTX = CTX, COMP = Self> + 'static> Component<CTX>
     }
 }
 
-impl<CTX: Printer + GetReciver<CTX = CTX, COMP = Self> + 'static> Renderable<CTX, Square> for Square {
+impl<CTX: Printer + 'static> Renderable<CTX, Square> for Square {
     fn view(&self) -> Html<CTX, Self> {
         /*{
             let mut stat = self.stat.get();
