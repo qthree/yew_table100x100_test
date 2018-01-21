@@ -9,56 +9,41 @@ use yew::services::console::ConsoleService;
 
 struct Context {
     console: ConsoleService,
-    active_square: Reciver<Context, Square>,
+    active_square: Reciver<square::Msg>,
 }
 
 use std::cell::Cell;
-use yew::html::{ScopeSender, ComponentUpdate};
-pub struct Reciver<CTX, COMP: Component<CTX>> {
-    inner: Cell<Option<Callback<COMP::Msg>>>
+pub struct Reciver<MSG> {
+    inner: Cell<Option<Callback<MSG>>>
 }
 
 pub trait GetReciver{
-    type CTX;
-    type COMP: Component<Self::CTX>;
-    fn get_reciver(&self) -> &Reciver<Self::CTX, Self::COMP>;
+    type MSG;
+    fn get_reciver(&self) -> &Reciver<Self::MSG>;
 }
 
 impl GetReciver for Context {
-    type CTX = Context;
-    type COMP = Square;
-    fn get_reciver(&self) -> &Reciver<Self::CTX, Self::COMP> {
+    type MSG = square::Msg;
+    fn get_reciver(&self) -> &Reciver<Self::MSG> {
         &self.active_square
     }
 }
 
-impl<CTX, COMP: Component<CTX>> Reciver<CTX, COMP> {
+impl<MSG> Reciver<MSG> {
     fn new() -> Self{
         Reciver{
             inner: Cell::new(None)
         }
     }
-    fn set(&self, sender: Callback<COMP::Msg>) {
+    fn set(&self, sender: Callback<MSG>) {
         self.inner.set(Some(sender));
     }
-    fn send(&self, update: COMP::Msg ) {
-        if let Some(mut sender) = self.inner.take() {
+    fn send(&self, update: MSG) {
+        if let Some(sender) = self.inner.take() {
             sender.emit(update);
         }
     }
 }
-/*
-trait SenderLike<CTX> {
-    type COMP: Component<Self::CTX>;
-    fn send(&mut self);
-}
-
-
-impl<CTX, COMP: Component<CTX>> SenderLike for ScopeSender<CTX, COMP> {
-    fn send(&mut self) {
-        self.send()
-    }
-}*/
 
 pub trait Printer {
     fn print(&mut self, data: &str);
