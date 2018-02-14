@@ -4,27 +4,37 @@ use yew::prelude::*;
 
 type Context = ();
 
+type Item = u32;
+
+const SIZE: usize = 100;
+
 struct Model {
-    selected: Option<(u32, u32)>
+    selected: Option<(usize, usize)>,
+    data: Vec<Vec<Item>>
 }
 
 enum Msg {
-    Select(u32, u32),
+    Populate,
+    Select(usize, usize),
 }
 
 impl Component<Context> for Model {
     type Msg = Msg;
     type Properties = ();
 
-    fn create(_: &mut Env<Context, Self>) -> Self {
+    fn create(_: (), _: &mut Env<Context, Self>) -> Self {
         Model {
-            selected: None
+            selected: None,
+            data: Vec::new()
         }
     }
 
     // Some details omitted. Explore the examples to get more.
     fn update(&mut self, msg: Self::Msg, _: &mut Env<Context, Self>) -> ShouldRender {
         match msg {
+            Msg::Populate => {
+                self.data = (0..SIZE).map(|_row| (0..SIZE).map(|_column| 0).collect()).collect();
+            },
             Msg::Select(x, y) => {
                 self.selected = Some((x, y));
             }
@@ -33,28 +43,40 @@ impl Component<Context> for Model {
     }
 }
 
-fn square_class(this: (u32, u32), selected: Option<(u32, u32)>) -> &'static str {
+fn _square_class(this: (usize, usize), selected: Option<(usize, usize)>) -> &'static str {
     match selected {
         Some(xy) if xy == this => {"square_green"},
         _ => {"square_red"}
     }
 }
 
-fn view_square(selected: Option<(u32, u32)>, row: u32, column: u32) -> Html<Context, Model> {
+fn square_style(this: (usize, usize), selected: Option<(usize, usize)>) -> String {
+    let value = match selected {
+        Some((y, x)) => {
+            let dif = ( (this.0 as i32 - y as i32), (this.1 as i32 - x as i32) );
+            255 - u32::min(255, (4.0*(dif.0*dif.0 + dif.1*dif.1) as f32).sqrt().round() as u32)
+        },
+        _ => 0
+    };
+    format!("background-color: rgb({}, {}, 150)", value, value)
+}
+
+fn view_square(selected: Option<(usize, usize)>, row_index: usize, column_index: usize, _item: &Item) -> Html<Context, Model> {
     html! {
         <td
-            class=square_class((column, row), selected),
-            onclick=move |_| Msg::Select(column, row),
+            /*class=square_class((column_index, row_index), selected),*/
+            style=square_style((row_index, column_index), selected),
+            onclick=move |_| Msg::Select(row_index, column_index),
         >
         </td>
     }
 }
 
-fn view_row(selected: Option<(u32, u32)>, row: u32) -> Html<Context, Model> {
+fn view_row(selected: Option<(usize, usize)>, row_index: usize, row: &[Item]) -> Html<Context, Model> {
     html! {
         <tr>
-            {for (0..99).map(|column| {
-                view_square(selected, row, column)
+            {for row.iter().enumerate().map(|(column_index, item)| {
+                view_square(selected, row_index, column_index, item)
             })}
         </tr>
     }
@@ -63,11 +85,18 @@ fn view_row(selected: Option<(u32, u32)>, row: u32) -> Html<Context, Model> {
 impl Renderable<Context, Model> for Model {
     fn view(&self) -> Html<Context, Self> {
         html! {
-            <table>
-                {for (0..99).map(|row| {
-                    view_row(self.selected, row)
-                })}
-            </table>
+            <div>
+                <button 
+                    onclick=move |_| Msg::Populate,
+                >
+                    {"Populate"}
+                </button>
+                <table>
+                    {for self.data.iter().enumerate().map(|(row_index, row)| {
+                        view_row(self.selected, row_index, row)
+                    })}
+                </table>
+            </div>
         }        
     }
 }
