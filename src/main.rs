@@ -8,14 +8,17 @@ type Item = u32;
 
 const SIZE: usize = 100;
 
+#[derive(Default)]
 struct Model {
     selected: Option<(usize, usize)>,
-    data: Vec<Vec<Item>>
+    data: Vec<Vec<Item>>,
+    text: String
 }
 
 enum Msg {
     Populate,
     Select(usize, usize),
+    Text(String),
 }
 
 impl Component<Context> for Model {
@@ -23,10 +26,7 @@ impl Component<Context> for Model {
     type Properties = ();
 
     fn create(_: (), _: &mut Env<Context, Self>) -> Self {
-        Model {
-            selected: None,
-            data: Vec::new()
-        }
+        Default::default()
     }
 
     // Some details omitted. Explore the examples to get more.
@@ -37,6 +37,9 @@ impl Component<Context> for Model {
             },
             Msg::Select(x, y) => {
                 self.selected = Some((x, y));
+            }
+            Msg::Text(text) => {
+                self.text = text;
             }
         }
         true
@@ -86,11 +89,18 @@ impl Renderable<Context, Model> for Model {
     fn view(&self) -> Html<Context, Self> {
         html! {
             <div>
-                <button 
+                <p><button 
                     onclick=move |_| Msg::Populate,
                 >
                     {"Populate"}
-                </button>
+                </button></p>
+                <p><input
+                    placeholder="Input text here",
+                    oninput=move |e: InputData| Msg::Text(e.value),
+                >
+                </input></p><p>
+                   {&self.text}
+                </p>
                 <table>
                     {for self.data.iter().enumerate().map(|(row_index, row)| {
                         view_row(self.selected, row_index, row)
